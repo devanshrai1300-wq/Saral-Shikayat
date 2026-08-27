@@ -1,328 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saral Shikayat | Public Grievance Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .loader {
-            border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6;
-            border-radius: 50%; width: 16px; height: 16px;
-            animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .mic-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saral Shikayat — Plain-Language Grievance Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .step { display: none; opacity: 0; transform: translateY(8px); transition: opacity .25s ease, transform .25s ease; }
+  .step.active { display: block; }
+  .step.active.show { opacity: 1; transform: translateY(0); }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+  #toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 50; }
+  .toast { background: #1e293b; color: white; padding: 10px 18px; border-radius: 10px; font-size: 14px;
+           margin-top: 8px; opacity: 0; transform: translateY(10px); transition: all .25s ease; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .chat-bubble { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; }
+  .chat-user { background: #ea580c; color: white; margin-left: auto; border-bottom-right-radius: 3px; }
+  .chat-ai { background: #f1f5f9; color: #1e293b; margin-right: auto; border-bottom-left-radius: 3px; }
+  .typing-dot { animation: blink 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: .2s; }
+  .typing-dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity: .25; } 40% { opacity: 1; } }
+
+  .sla-ok { color: #16a34a; }
+  .sla-soon { color: #d97706; }
+  .sla-overdue { color: #dc2626; font-weight: 600; }
+</style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+<body class="bg-slate-50 min-h-screen">
 
-    <nav class="bg-white shadow-sm border-b-4 border-orange-500">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                🇮🇳 Saral Shikayat
-            </h1>
-            <span class="text-sm text-gray-500 font-medium">AI Public Grievance Assistant</span>
-        </div>
-    </nav>
+<header class="bg-gradient-to-r from-orange-600 via-white to-green-600 p-1">
+  <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold">सरल शिकायत · Saral Shikayat</h1>
+      <p class="text-sm text-slate-300">Describe your problem in your own words. We'll route it, draft it, and track it.</p>
+    </div>
+    <button onclick="showTracker()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm font-medium transition">📋 My Grievances</button>
+  </div>
+</header>
 
-    <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        <!-- LEFT COLUMN: Intake Form -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-            <h2 class="text-lg font-semibold mb-4 border-b pb-2">1. Describe Your Issue</h2>
-            
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Citizen Name</label>
-                        <input type="text" id="citizenName" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="e.g. Ramesh Kumar">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contact Details</label>
-                        <input type="text" id="citizenContact" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Phone or Email">
-                    </div>
-                </div>
+<main class="max-w-3xl mx-auto p-6">
 
-                <div>
-                    <div class="flex justify-between items-end mb-1">
-                        <label class="block text-sm font-medium text-gray-700">Problem Description</label>
-                        
-                        <!-- Voice Input Controls -->
-                        <div class="flex items-center gap-2">
-                            <select id="speechLang" class="text-xs border rounded p-1 bg-gray-50">
-                                <option value="en-IN">English (India)</option>
-                                <option value="hi-IN">हिंदी (Hindi)</option>
-                                <option value="mr-IN">मराठी (Marathi)</option>
-                                <option value="ta-IN">தமிழ் (Tamil)</option>
-                                <option value="te-IN">తెలుగు (Telugu)</option>
-                                <option value="bn-IN">বাংলা (Bengali)</option>
-                            </select>
-                            <button id="micBtn" onclick="toggleDictation()" class="bg-red-50 text-red-600 hover:bg-red-100 p-1.5 rounded-full border border-red-200 transition" title="Click to speak">
-                                🎤
-                            </button>
-                        </div>
-                    </div>
-                    <textarea id="description" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Describe your issue here or click the microphone icon to speak in your local language..."></textarea>
-                    <p id="micStatus" class="text-xs text-red-600 font-medium hidden mt-1">Listening... speak now.</p>
-                </div>
+  <div id="progress" class="flex items-center justify-between mb-8 text-sm">
+    <div class="flex-1 text-center pb-2 border-b-4 border-orange-500 font-semibold transition-all" id="pstep-1">1. Describe</div>
+    <div class="flex-1 text-center pb-2 border-b-4 border-slate-200 text-slate-400 transition-all" id="pstep-2">2. Confirm Department</div>
+    <div class="flex-1 text-center pb-2 border-b-4 border-slate-200 text-slate-400 transition-all" id="pstep-3">3. Review Draft</div>
+    <div class="flex-1 text-center pb-2 border-b-4 border-slate-200 text-slate-400 transition-all" id="pstep-4">4. Saved</div>
+  </div>
 
-                <button onclick="generateDraft()" id="draftBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-                    <span>Translate & Generate Formal Draft</span>
-                </button>
-            </div>
-        </div>
+  <section id="step-1" class="step bg-white rounded-xl shadow p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-slate-800">What went wrong?</h2>
+    <p class="text-slate-500 text-sm">Write it like you'd explain it to a friend. No need for official language — we'll handle that.</p>
+    <textarea id="description" rows="6" placeholder="e.g. I applied for PF withdrawal 2 months ago (UAN 1001XXXXXX). It shows 'rejected' with no reason. I need this money urgently and don't know what to do next."
+      class="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-400 focus:outline-none transition"></textarea>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm text-slate-600">Your name</label>
+        <input id="name" type="text" class="w-full border border-slate-300 rounded-lg p-2 mt-1 focus:ring-2 focus:ring-orange-400 focus:outline-none transition" placeholder="Full name">
+      </div>
+      <div>
+        <label class="text-sm text-slate-600">Phone or email</label>
+        <input id="contact" type="text" class="w-full border border-slate-300 rounded-lg p-2 mt-1 focus:ring-2 focus:ring-orange-400 focus:outline-none transition" placeholder="For officials to reach you">
+      </div>
+    </div>
+    <button onclick="doClassify()" id="classify-btn" class="bg-orange-600 hover:bg-orange-700 active:scale-95 text-white px-5 py-2.5 rounded-lg font-medium transition">
+      Find the right department →
+    </button>
+  </section>
 
-        <!-- RIGHT COLUMN: Results & Chat -->
-        <div class="space-y-6">
-            
-            <!-- Draft Output Area -->
-            <div id="draftSection" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hidden">
-                <h2 class="text-lg font-semibold mb-4 border-b pb-2 flex justify-between items-center">
-                    <span>2. Review Formal Draft</span>
-                    <span id="deptTag" class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full border"></span>
-                </h2>
-                
-                <div class="bg-gray-50 border rounded-lg p-4 mb-4">
-                    <p id="draftOutput" class="text-sm text-gray-800 whitespace-pre-wrap font-serif"></p>
-                </div>
-                
-                <button onclick="submitGrievance()" id="submitBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-                    <span>File Officially & Get Tracking ID</span>
-                </button>
-            </div>
+  <section id="step-2" class="step bg-white rounded-xl shadow p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-slate-800">We think this belongs to:</h2>
+    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+      <select id="dept-select" class="w-full bg-transparent font-semibold text-slate-800 text-lg focus:outline-none"></select>
+      <p class="text-sm text-slate-500 mt-1">Not right? Pick the correct one from the dropdown above.</p>
+    </div>
 
-            <!-- Tracking & Assistant Area -->
-            <div id="chatSection" class="bg-white rounded-xl shadow-sm border border-gray-200 hidden flex-col h-[500px]">
-                <div class="p-4 border-b bg-green-50 rounded-t-xl">
-                    <h2 class="text-lg font-semibold text-green-800 flex items-center gap-2">
-                        ✅ Grievance Filed
-                    </h2>
-                    <p class="text-sm text-green-700 mt-1">Reference ID: <strong id="refIdDisplay" class="text-lg"></strong></p>
-                </div>
-                
-                <!-- Chat Window -->
-                <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50 text-sm">
-                    <div class="bg-blue-100 border border-blue-200 text-blue-900 p-3 rounded-r-xl rounded-bl-xl w-5/6">
-                        Hello! Your grievance has been saved. I am your AI assistant. You can ask me:
-                        <ul class="list-disc ml-5 mt-2">
-                            <li>What documents do I need to prepare?</li>
-                            <li>When can I expect a resolution?</li>
-                            <li>What happens if they don't reply?</li>
-                        </ul>
-                    </div>
-                </div>
+    <div>
+      <h3 class="font-medium text-slate-700 mb-2">📎 Have these ready (mentioning them speeds things up):</h3>
+      <ul id="doc-checklist" class="list-disc list-inside text-sm text-slate-600 space-y-1"></ul>
+    </div>
 
-                <!-- Chat Input -->
-                <div class="p-4 border-t bg-white rounded-b-xl flex gap-2">
-                    <input type="text" id="chatInput" onkeypress="if(event.key === 'Enter') sendChatMessage()" class="flex-1 border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Ask a question about your grievance...">
-                    <button onclick="sendChatMessage()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                        Send
-                    </button>
-                </div>
-            </div>
+    <div>
+      <h3 class="font-medium text-slate-700 mb-2">⏱️ What normally happens next:</h3>
+      <ol id="sla-preview" class="text-sm text-slate-600 space-y-1"></ol>
+    </div>
 
-        </div>
-    </main>
+    <div class="flex gap-3">
+      <button onclick="goStep(1)" class="text-slate-500 px-4 py-2 hover:text-slate-700 transition">← Back</button>
+      <button onclick="doDraft()" id="draft-btn" class="bg-orange-600 hover:bg-orange-700 active:scale-95 text-white px-5 py-2.5 rounded-lg font-medium transition">
+        Generate formal draft →
+      </button>
+    </div>
+  </section>
 
-    <script>
-        // --- 1. Web Speech API (Multi-lingual STT with Fallback) ---
-        let recognition;
-        let isListening = false;
+  <section id="step-3" class="step bg-white rounded-xl shadow p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-slate-800">Your grievance, ready to submit</h2>
+    <p id="draft-source" class="text-xs text-slate-400"></p>
+    <textarea id="draft-text" rows="14" class="w-full border border-slate-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none transition"></textarea>
+    <p class="text-sm text-slate-500">Edit anything above. Then copy this into the official portal (e.g. CPGRAMS / EPFO / the relevant portal), or save it here to track your own follow-up deadlines.</p>
+    <div class="flex gap-3 flex-wrap">
+      <button onclick="goStep(2)" class="text-slate-500 px-4 py-2 hover:text-slate-700 transition">← Back</button>
+      <button onclick="copyDraft()" class="bg-slate-700 hover:bg-slate-800 active:scale-95 text-white px-5 py-2.5 rounded-lg font-medium transition">📋 Copy text</button>
+      <button onclick="saveGrievance()" id="save-btn" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-5 py-2.5 rounded-lg font-medium transition">Save & track →</button>
+    </div>
+  </section>
 
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            
-            recognition.onstart = function() {
-                isListening = true;
-                document.getElementById('micBtn').classList.add('bg-red-600', 'text-white', 'mic-pulse');
-                document.getElementById('micBtn').classList.remove('bg-red-50', 'text-red-600');
-                document.getElementById('micStatus').classList.remove('hidden');
-                document.getElementById('micStatus').innerText = "Listening... speak now.";
-            };
+  <section id="step-4" class="step bg-white rounded-xl shadow p-6 space-y-4 text-center">
+    <div class="text-5xl">✅</div>
+    <h2 class="text-lg font-semibold text-slate-800">Saved. Your reference ID:</h2>
+    <div class="text-2xl font-bold text-orange-600" id="ref-id-display"></div>
+    <p class="text-sm text-slate-500">Ask the AI assistant under "My Grievances" anytime — e.g. "when will this be resolved?" or "what documents do I need?"</p>
+    <button onclick="showTracker()" class="bg-orange-600 hover:bg-orange-700 active:scale-95 text-white px-5 py-2.5 rounded-lg font-medium transition">View My Grievances</button>
+  </section>
 
-            recognition.onresult = function(event) {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
-                    }
-                }
-                if (finalTranscript) {
-                    const descField = document.getElementById('description');
-                    descField.value += finalTranscript; 
-                }
-            };
+  <section id="tracker" class="step space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-slate-800">My Grievances</h2>
+      <button onclick="goStep(1)" class="text-sm text-orange-600 font-medium hover:text-orange-700 transition">+ New grievance</button>
+    </div>
+    <div id="tracker-list" class="space-y-4"></div>
+  </section>
 
-            recognition.onend = function() {
-                isListening = false;
-                document.getElementById('micBtn').classList.remove('bg-red-600', 'text-white', 'mic-pulse');
-                document.getElementById('micBtn').classList.add('bg-red-50', 'text-red-600');
-                document.getElementById('micStatus').classList.add('hidden');
-            };
+</main>
 
-            recognition.onerror = function(event) {
-                console.error("Speech recognition error:", event.error);
-                if (event.error === 'language-not-supported') {
-                    alert("The selected language is not supported by your browser engine. Switching fallback to English (India).");
-                    recognition.lang = 'en-IN';
-                    document.getElementById('speechLang').value = 'en-IN';
-                }
-                recognition.stop();
-            };
-        } else {
-            document.getElementById('micBtn').style.display = 'none';
-            console.warn("Web Speech API not supported in this browser.");
-        }
+<div id="toast-wrap"></div>
 
-        function toggleDictation() {
-            if (!recognition) return alert("Speech to text is not supported in this browser. Please use Google Chrome or Microsoft Edge.");
-            
-            if (isListening) {
-                recognition.stop();
-            } else {
-                const langSelect = document.getElementById('speechLang');
-                recognition.lang = langSelect ? langSelect.value : 'en-IN';
-                try {
-                    recognition.start();
-                } catch(e) {
-                    console.error(e);
-                }
-            }
-        }
+<script>
+let state = { description: "", name: "", contact: "", department_key: "", department_label: "", draft: "", source: "" };
+let chatHistories = {};
 
-        // --- 2. Application Logic (API Calls) ---
-        let currentDraftData = {};
-        let currentRefId = null;
-        let chatHistory = [];
+function toast(msg) {
+  const wrap = document.getElementById("toast-wrap");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 250); }, 2400);
+}
 
-        async function generateDraft() {
-            const desc = document.getElementById('description').value;
-            const name = document.getElementById('citizenName').value;
-            const contact = document.getElementById('citizenContact').value;
-            const btn = document.getElementById('draftBtn');
+function setLoading(btn, loading, label) {
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.dataset.orig = btn.dataset.orig || btn.textContent;
+  btn.textContent = loading ? (label || "Working…") : btn.dataset.orig;
+  btn.classList.toggle("opacity-60", loading);
+}
 
-            if (!desc.trim()) return alert("Please describe your problem first.");
+function goStep(n) {
+  document.querySelectorAll(".step").forEach(s => { s.classList.remove("active", "show"); });
+  const target = document.getElementById("step-" + n);
+  target.classList.add("active");
+  requestAnimationFrame(() => target.classList.add("show"));
+  document.querySelectorAll("[id^=pstep-]").forEach(p => {
+    p.classList.remove("border-orange-500", "font-semibold", "text-slate-800");
+    p.classList.add("border-slate-200", "text-slate-400");
+  });
+  let cur = document.getElementById("pstep-" + n);
+  if (cur) { cur.classList.add("border-orange-500", "font-semibold", "text-slate-800"); cur.classList.remove("border-slate-200","text-slate-400"); }
+}
 
-            btn.innerHTML = '<span class="loader"></span> Generating Draft...';
-            btn.disabled = true;
+function slaClass(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffDays = (d - now) / 86400000;
+  if (diffDays < 0) return "sla-overdue";
+  if (diffDays < 3) return "sla-soon";
+  return "sla-ok";
+}
 
-            try {
-                // Step A: Classify Department
-                const classRes = await fetch('/api/classify', {
-                    method: 'POST', body: JSON.stringify({ description: desc })
-                });
-                const classData = await classRes.json();
-                
-                // Step B: Generate Formal Draft (LLM handles Translation)
-                const draftRes = await fetch('/api/draft', {
-                    method: 'POST', 
-                    body: JSON.stringify({
-                        name: name, contact: contact,
-                        department_key: classData.department_key,
-                        description: desc
-                    })
-                });
-                const draftData = await draftRes.json();
+async function doClassify() {
+  state.description = document.getElementById("description").value.trim();
+  state.name = document.getElementById("name").value.trim();
+  state.contact = document.getElementById("contact").value.trim();
+  if (!state.description) { toast("Please describe the problem first."); return; }
 
-                // Store state for submission
-                currentDraftData = {
-                    name: name, contact: contact,
-                    department_key: classData.department_key,
-                    department_label: classData.department_label,
-                    description: desc,
-                    draft_text: draftData.draft,
-                    drafted_by: draftData.source
-                };
+  setLoading(document.getElementById("classify-btn"), true, "Finding department…");
+  try {
+    const res = await fetch("/api/classify", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ description: state.description })
+    });
+    const data = await res.json();
+    state.department_key = data.department_key;
+    state.department_label = data.department_label;
 
-                // Update UI
-                document.getElementById('draftSection').classList.remove('hidden');
-                document.getElementById('deptTag').innerText = "Routed to: " + classData.department_label;
-                document.getElementById('draftOutput').innerText = draftData.draft;
-                
-            } catch (err) {
-                alert("Error connecting to server.");
-                console.error(err);
-            } finally {
-                btn.innerHTML = '<span>Translate & Generate Formal Draft</span>';
-                btn.disabled = false;
-            }
-        }
+    const sel = document.getElementById("dept-select");
+    sel.innerHTML = "";
+    const deptOptions = {
+      epfo: "EPFO (Provident Fund)", income_tax: "Income Tax Department",
+      railways: "Railways / IRCTC", passport: "Passport Seva",
+      aadhaar: "UIDAI (Aadhaar)", pension: "Pension (CPAO)",
+      municipal: "Municipal / Local Body", electricity: "Electricity / Power Utility",
+      banking: "Banking (RBI Ombudsman)", police: "Police / Law & Order",
+      other: "General Public Grievance (CPGRAMS)"
+    };
+    for (const [key, label] of Object.entries(deptOptions)) {
+      const opt = document.createElement("option");
+      opt.value = key; opt.textContent = label;
+      if (key === state.department_key) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.onchange = () => { state.department_key = sel.value; state.department_label = deptOptions[sel.value]; };
 
-        async function submitGrievance() {
-            const btn = document.getElementById('submitBtn');
-            btn.innerHTML = '<span class="loader"></span> Saving...';
-            btn.disabled = true;
+    document.getElementById("doc-checklist").innerHTML = data.documents.map(d => "<li>" + d + "</li>").join("");
+    document.getElementById("sla-preview").innerHTML = data.sla.map((s,i) =>
+      "<li>" + (i+1) + ". " + s.label + " — by <b class=\"" + slaClass(s.date) + "\">" + s.date + "</b></li>").join("");
 
-            try {
-                const res = await fetch('/api/grievances', {
-                    method: 'POST', body: JSON.stringify(currentDraftData)
-                });
-                const data = await res.json();
-                
-                currentRefId = data.ref_id;
-                
-                // Switch UI to tracking mode
-                document.getElementById('draftSection').classList.add('hidden');
-                document.getElementById('chatSection').classList.remove('hidden');
-                document.getElementById('chatSection').classList.add('flex');
-                document.getElementById('refIdDisplay').innerText = currentRefId;
+    goStep(2);
+  } catch (e) {
+    toast("Something went wrong reaching the server. Is app.py running?");
+  } finally {
+    setLoading(document.getElementById("classify-btn"), false);
+  }
+}
 
-                // Disable input form
-                document.getElementById('description').disabled = true;
-                document.getElementById('citizenName').disabled = true;
-                document.getElementById('citizenContact').disabled = true;
-                document.getElementById('draftBtn').disabled = true;
-                
-            } catch (err) {
-                alert("Error saving grievance.");
-                btn.innerHTML = <span>File Officially & Get Tracking ID</span>;
-                btn.disabled = false;
-            }
-        }
+async function doDraft() {
+  setLoading(document.getElementById("draft-btn"), true, "Drafting…");
+  try {
+    const res = await fetch("/api/draft", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        name: state.name, contact: state.contact,
+        department_key: state.department_key, description: state.description
+      })
+    });
+    const data = await res.json();
+    state.draft = data.draft; state.source = data.source;
+    document.getElementById("draft-text").value = data.draft;
+    document.getElementById("draft-source").textContent =
+      data.source === "llm" ? "✨ Drafted with AI assistance" : "📝 Drafted from template (add an OPENAI_API_KEY for AI-polished drafts)";
+    goStep(3);
+  } catch (e) {
+    toast("Couldn't generate the draft. Check the server is running.");
+  } finally {
+    setLoading(document.getElementById("draft-btn"), false);
+  }
+}
 
-        async function sendChatMessage() {
-            const inputField = document.getElementById('chatInput');
-            const message = inputField.value.trim();
-            if (!message || !currentRefId) return;
+function copyDraft() {
+  navigator.clipboard.writeText(document.getElementById("draft-text").value);
+  toast("Copied! Paste it into the official portal's grievance form.");
+}
 
-            const chatBox = document.getElementById('chatBox');
-            
-            // Add User Message to UI
-            chatBox.innerHTML += `
-                <div class="flex justify-end mb-4">
-                    <div class="bg-gray-800 text-white p-3 rounded-l-xl rounded-tr-xl max-w-[80%]">${message}</div>
-                </div>`;
-            inputField.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
+async function saveGrievance() {
+  setLoading(document.getElementById("save-btn"), true, "Saving…");
+  try {
+    const res = await fetch("/api/grievances", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        name: state.name, contact: state.contact,
+        department_key: state.department_key, department_label: state.department_label,
+        description: state.description,
+        draft_text: document.getElementById("draft-text").value,
+        drafted_by: state.source
+      })
+    });
+    const data = await res.json();
+    document.getElementById("ref-id-display").textContent = "#" + data.ref_id;
+    goStep(4);
+  } catch (e) {
+    toast("Couldn't save. Check the server is running.");
+  } finally {
+    setLoading(document.getElementById("save-btn"), false);
+  }
+}
 
-            // Call Chat API
-            try {
-                const res = await fetch(`/api/grievances/${currentRefId}/chat`, {
-                    method: 'POST',
-                    body: JSON.stringify({ message: message, history: chatHistory })
-                });
-                const data = await res.json();
-                
-                // Update History
-                chatHistory.push({role: "user", content: message});
-                chatHistory.push({role: "assistant", content: data.reply});
+async function showTracker() {
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active", "show"));
+  const t = document.getElementById("tracker");
+  t.classList.add("active");
+  requestAnimationFrame(() => t.classList.add("show"));
 
-                // Add AI Message to UI
-                chatBox.innerHTML += `
-                    <div class="flex justify-start mb-4">
-                        <div class="bg-blue-100 border border-blue-200 text-blue-900 p-3 rounded-r-xl rounded-bl-xl max-w-[80%] whitespace-pre-wrap">${data.reply}</div>
-                    </div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                
-            } catch (err) {
-                chatBox.innerHTML += <div class="text-red-500 text-xs text-center mt-2">Failed to get response.</div>;
-            }
-        }
-    </script>
+  const list = document.getElementById("tracker-list");
+  list.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">Loading…</p>';
+  const res = await fetch("/api/grievances");
+  const items = await res.json();
+  if (items.length === 0) {
+    list.innerHTML = '<p class="text-slate-500 bg-white rounded-xl shadow p-6 text-center">No grievances saved yet.</p>';
+    return;
+  }
+  list.innerHTML = items.map(it => {
+    const slaLines = it.sla.map((s,i) => "<li>" + (i+1) + ". " + s.label + " — by <b class=\"" + slaClass(s.date) + "\">" + s.date + "</b></li>").join("");
+    const shortDesc = it.description.slice(0,120) + (it.description.length>120 ? "…" : "");
+    return '' +
+      '<div class="bg-white rounded-xl shadow p-5">' +
+        '<div class="flex justify-between items-start">' +
+          '<div>' +
+            '<p class="font-semibold text-slate-800">#' + it.ref_id + ' — ' + it.department_label + '</p>' +
+            '<p class="text-sm text-slate-500">' + shortDesc + '</p>' +
+            '<p class="text-xs text-slate-400 mt-1">Filed ' + it.created_at + '</p>' +
+          '</div>' +
+          '<button onclick="toggleChat(\'' + it.ref_id + '\')" class="text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg font-medium transition whitespace-nowrap">💬 Ask AI</button>' +
+        '</div>' +
+        '<div class="mt-3 border-t pt-3">' +
+          '<p class="text-xs font-medium text-slate-600 mb-1">Escalation timeline:</p>' +
+          '<ol class="text-sm text-slate-600 space-y-0.5">' + slaLines + '</ol>' +
+        '</div>' +
+        '<div id="chat-' + it.ref_id + '" class="hidden mt-3 border-t pt-3">' +
+          '<div id="chat-log-' + it.ref_id + '" class="space-y-2 max-h-56 overflow-y-auto mb-2 pr-1"></div>' +
+          '<div id="typing-' + it.ref_id + '" class="hidden chat-bubble chat-ai mb-2">' +
+            '<span class="typing-dot">●</span><span class="typing-dot">●</span><span class="typing-dot">●</span>' +
+          '</div>' +
+          '<form onsubmit="sendChat(event, \'' + it.ref_id + '\')" class="flex gap-2">' +
+            '<input id="chat-input-' + it.ref_id + '" type="text" placeholder="e.g. when will this be resolved?" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none transition">' +
+            '<button type="submit" class="bg-orange-600 hover:bg-orange-700 active:scale-95 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Send</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+  }).join("");
+}
+
+function toggleChat(refId) {
+  const box = document.getElementById("chat-" + refId);
+  box.classList.toggle("hidden");
+  if (!box.classList.contains("hidden") && !chatHistories[refId]) {
+    chatHistories[refId] = [];
+    appendChatBubble(refId, "assistant",
+      'Hi! Ask me things like "when will this be resolved", "what documents do I need", or "what if there is no response".');
+  }
+}
+
+function appendChatBubble(refId, role, text) {
+  const log = document.getElementById("chat-log-" + refId);
+  const el = document.createElement("div");
+  el.className = "chat-bubble " + (role === "user" ? "chat-user" : "chat-ai");
+  el.textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChat(evt, refId) {
+  evt.preventDefault();
+  const input = document.getElementById("chat-input-" + refId);
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = "";
+  appendChatBubble(refId, "user", message);
+  chatHistories[refId].push({ role: "user", content: message });
+
+  const typing = document.getElementById("typing-" + refId);
+  typing.classList.remove("hidden");
+  try {
+    const res = await fetch("/api/grievances/" + refId + "/chat", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ message, history: chatHistories[refId] })
+    });
+    const data = await res.json();
+    typing.classList.add("hidden");
+    appendChatBubble(refId, "assistant", data.reply);
+    chatHistories[refId].push({ role: "assistant", content: data.reply });
+  } catch (e) {
+    typing.classList.add("hidden");
+    appendChatBubble(refId, "assistant", "Couldn't reach the server just now — please try again.");
+  }
+}
+
+goStep(1);
+</script>
 </body>
 </html>
