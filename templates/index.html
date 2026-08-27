@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saral Shikayat | Public Grievance Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6;
+            border-radius: 50%; width: 16px; height: 16px;
+            animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mic-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+    <nav class="bg-white shadow-sm border-b-4 border-orange-500">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                🇮🇳 Saral Shikayat
+            </h1>
+            <span class="text-sm text-gray-500 font-medium">AI Public Grievance Assistant</span>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- LEFT COLUMN: Intake Form -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">1. Describe Your Issue</h2>
+            
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Citizen Name</label>
+                        <input type="text" id="citizenName" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="e.g. Ramesh Kumar">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contact Details</label>
+                        <input type="text" id="citizenContact" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Phone or Email">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Problem Description</label>
+                        
+                        <!-- Voice Input Controls -->
+                        <div class="flex items-center gap-2">
+                            <select id="speechLang" class="text-xs border rounded p-1 bg-gray-50">
+                                <option value="en-IN">English (India)</option>
+                                <option value="hi-IN">हिंदी (Hindi)</option>
+                                <option value="mr-IN">मराठी (Marathi)</option>
+                                <option value="ta-IN">தமிழ் (Tamil)</option>
+                                <option value="te-IN">తెలుగు (Telugu)</option>
+                                <option value="bn-IN">বাংলা (Bengali)</option>
+                            </select>
+                            <button id="micBtn" onclick="toggleDictation()" class="bg-red-50 text-red-600 hover:bg-red-100 p-1.5 rounded-full border border-red-200 transition" title="Click to speak">
+                                🎤
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="description" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Describe your issue here or click the microphone icon to speak in your local language..."></textarea>
+                    <p id="micStatus" class="text-xs text-red-600 font-medium hidden mt-1">Listening... speak now.</p>
+                </div>
+
+                <button onclick="generateDraft()" id="draftBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    <span>Translate & Generate Formal Draft</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Results & Chat -->
+        <div class="space-y-6">
+            
+            <!-- Draft Output Area -->
+            <div id="draftSection" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hidden">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 flex justify-between items-center">
+                    <span>2. Review Formal Draft</span>
+                    <span id="deptTag" class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full border"></span>
+                </h2>
+                
+                <div class="bg-gray-50 border rounded-lg p-4 mb-4">
+                    <p id="draftOutput" class="text-sm text-gray-800 whitespace-pre-wrap font-serif"></p>
+                </div>
+                
+                <button onclick="submitGrievance()" id="submitBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    <span>File Officially & Get Tracking ID</span>
+                </button>
+            </div>
+
+            <!-- Tracking & Assistant Area -->
+            <div id="chatSection" class="bg-white rounded-xl shadow-sm border border-gray-200 hidden flex-col h-[500px]">
+                <div class="p-4 border-b bg-green-50 rounded-t-xl">
+                    <h2 class="text-lg font-semibold text-green-800 flex items-center gap-2">
+                        ✅ Grievance Filed
+                    </h2>
+                    <p class="text-sm text-green-700 mt-1">Reference ID: <strong id="refIdDisplay" class="text-lg"></strong></p>
+                </div>
+                
+                <!-- Chat Window -->
+                <div id="chatBox" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50 text-sm">
+                    <div class="bg-blue-100 border border-blue-200 text-blue-900 p-3 rounded-r-xl rounded-bl-xl w-5/6">
+                        Hello! Your grievance has been saved. I am your AI assistant. You can ask me:
+                        <ul class="list-disc ml-5 mt-2">
+                            <li>What documents do I need to prepare?</li>
+                            <li>When can I expect a resolution?</li>
+                            <li>What happens if they don't reply?</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t bg-white rounded-b-xl flex gap-2">
+                    <input type="text" id="chatInput" onkeypress="if(event.key === 'Enter') sendChatMessage()" class="flex-1 border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Ask a question about your grievance...">
+                    <button onclick="sendChatMessage()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Send
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- 1. Web Speech API (Multi-lingual STT with Fallback) ---
+        let recognition;
+        let isListening = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            
+            recognition.onstart = function() {
+                isListening = true;
+                document.getElementById('micBtn').classList.add('bg-red-600', 'text-white', 'mic-pulse');
+                document.getElementById('micBtn').classList.remove('bg-red-50', 'text-red-600');
+                document.getElementById('micStatus').classList.remove('hidden');
+                document.getElementById('micStatus').innerText = "Listening... speak now.";
+            };
+
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    }
+                }
+                if (finalTranscript) {
+                    const descField = document.getElementById('description');
+                    descField.value += finalTranscript; 
+                }
+            };
+
+            recognition.onend = function() {
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('bg-red-600', 'text-white', 'mic-pulse');
+                document.getElementById('micBtn').classList.add('bg-red-50', 'text-red-600');
+                document.getElementById('micStatus').classList.add('hidden');
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Speech recognition error:", event.error);
+                if (event.error === 'language-not-supported') {
+                    alert("The selected language is not supported by your browser engine. Switching fallback to English (India).");
+                    recognition.lang = 'en-IN';
+                    document.getElementById('speechLang').value = 'en-IN';
+                }
+                recognition.stop();
+            };
+        } else {
+            document.getElementById('micBtn').style.display = 'none';
+            console.warn("Web Speech API not supported in this browser.");
+        }
+
+        function toggleDictation() {
+            if (!recognition) return alert("Speech to text is not supported in this browser. Please use Google Chrome or Microsoft Edge.");
+            
+            if (isListening) {
+                recognition.stop();
+            } else {
+                const langSelect = document.getElementById('speechLang');
+                recognition.lang = langSelect ? langSelect.value : 'en-IN';
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        // --- 2. Application Logic (API Calls) ---
+        let currentDraftData = {};
+        let currentRefId = null;
+        let chatHistory = [];
+
+        async function generateDraft() {
+            const desc = document.getElementById('description').value;
+            const name = document.getElementById('citizenName').value;
+            const contact = document.getElementById('citizenContact').value;
+            const btn = document.getElementById('draftBtn');
+
+            if (!desc.trim()) return alert("Please describe your problem first.");
+
+            btn.innerHTML = '<span class="loader"></span> Generating Draft...';
+            btn.disabled = true;
+
+            try {
+                // Step A: Classify Department
+                const classRes = await fetch('/api/classify', {
+                    method: 'POST', body: JSON.stringify({ description: desc })
+                });
+                const classData = await classRes.json();
+                
+                // Step B: Generate Formal Draft (LLM handles Translation)
+                const draftRes = await fetch('/api/draft', {
+                    method: 'POST', 
+                    body: JSON.stringify({
+                        name: name, contact: contact,
+                        department_key: classData.department_key,
+                        description: desc
+                    })
+                });
+                const draftData = await draftRes.json();
+
+                // Store state for submission
+                currentDraftData = {
+                    name: name, contact: contact,
+                    department_key: classData.department_key,
+                    department_label: classData.department_label,
+                    description: desc,
+                    draft_text: draftData.draft,
+                    drafted_by: draftData.source
+                };
+
+                // Update UI
+                document.getElementById('draftSection').classList.remove('hidden');
+                document.getElementById('deptTag').innerText = "Routed to: " + classData.department_label;
+                document.getElementById('draftOutput').innerText = draftData.draft;
+                
+            } catch (err) {
+                alert("Error connecting to server.");
+                console.error(err);
+            } finally {
+                btn.innerHTML = '<span>Translate & Generate Formal Draft</span>';
+                btn.disabled = false;
+            }
+        }
+
+        async function submitGrievance() {
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span class="loader"></span> Saving...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/grievances', {
+                    method: 'POST', body: JSON.stringify(currentDraftData)
+                });
+                const data = await res.json();
+                
+                currentRefId = data.ref_id;
+                
+                // Switch UI to tracking mode
+                document.getElementById('draftSection').classList.add('hidden');
+                document.getElementById('chatSection').classList.remove('hidden');
+                document.getElementById('chatSection').classList.add('flex');
+                document.getElementById('refIdDisplay').innerText = currentRefId;
+
+                // Disable input form
+                document.getElementById('description').disabled = true;
+                document.getElementById('citizenName').disabled = true;
+                document.getElementById('citizenContact').disabled = true;
+                document.getElementById('draftBtn').disabled = true;
+                
+            } catch (err) {
+                alert("Error saving grievance.");
+                btn.innerHTML = <span>File Officially & Get Tracking ID</span>;
+                btn.disabled = false;
+            }
+        }
+
+        async function sendChatMessage() {
+            const inputField = document.getElementById('chatInput');
+            const message = inputField.value.trim();
+            if (!message || !currentRefId) return;
+
+            const chatBox = document.getElementById('chatBox');
+            
+            // Add User Message to UI
+            chatBox.innerHTML += `
+                <div class="flex justify-end mb-4">
+                    <div class="bg-gray-800 text-white p-3 rounded-l-xl rounded-tr-xl max-w-[80%]">${message}</div>
+                </div>`;
+            inputField.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Call Chat API
+            try {
+                const res = await fetch(`/api/grievances/${currentRefId}/chat`, {
+                    method: 'POST',
+                    body: JSON.stringify({ message: message, history: chatHistory })
+                });
+                const data = await res.json();
+                
+                // Update History
+                chatHistory.push({role: "user", content: message});
+                chatHistory.push({role: "assistant", content: data.reply});
+
+                // Add AI Message to UI
+                chatBox.innerHTML += `
+                    <div class="flex justify-start mb-4">
+                        <div class="bg-blue-100 border border-blue-200 text-blue-900 p-3 rounded-r-xl rounded-bl-xl max-w-[80%] whitespace-pre-wrap">${data.reply}</div>
+                    </div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+                
+            } catch (err) {
+                chatBox.innerHTML += <div class="text-red-500 text-xs text-center mt-2">Failed to get response.</div>;
+            }
+        }
+    </script>
+</body>
+</html>
