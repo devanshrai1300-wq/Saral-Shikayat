@@ -3,707 +3,584 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Saral Shikayat — Find the Right Department</title>
-
+  <meta name="theme-color" content="#0f172a">
+  <title>Saral Shikayat — Find the Right Place to Complain</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system,
-        BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .gradient-border {
-      background: linear-gradient(90deg, #f97316, #ffffff, #16a34a);
-      padding: 1px;
-    }
-
-    .glass {
-      background: rgba(255,255,255,.86);
-      backdrop-filter: blur(10px);
-    }
-
-    .step {
-      display: none;
-    }
-
-    .step.active {
-      display: block;
-      animation: fadeUp .3s ease;
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .category-card {
-      transition: all .2s ease;
-    }
-
-    .category-card:hover {
-      transform: translateY(-2px);
-      border-color: #fb923c;
-      box-shadow: 0 8px 20px rgba(15,23,42,.08);
-    }
-
-    .category-card.selected {
-      border-color: #f97316;
-      background: #fff7ed;
-    }
-
-    .toast-wrap {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 100;
-      width: min(92%, 420px);
-    }
-
-    .toast {
-      background: #0f172a;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 12px;
-      margin-top: 8px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.2);
-      animation: fadeUp .25s ease;
-      font-size: 14px;
-    }
-
-    .chat-bubble {
-      max-width: 88%;
-      padding: 10px 13px;
-      border-radius: 14px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .chat-user {
-      background: #ea580c;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-
-    .chat-ai {
-      background: #f1f5f9;
-      color: #334155;
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
-
-    .timeline-line {
-      position: absolute;
-      left: 15px;
-      top: 30px;
-      bottom: -10px;
-      width: 2px;
-      background: #e2e8f0;
-    }
-
-    .timeline:last-child .timeline-line {
-      display: none;
-    }
-
-    .typing-dot {
-      animation: blink 1.2s infinite;
-    }
-
-    .typing-dot:nth-child(2) {
-      animation-delay: .2s;
-    }
-
-    .typing-dot:nth-child(3) {
-      animation-delay: .4s;
-    }
-
-    @keyframes blink {
-      0%, 80%, 100% {
-        opacity: .25;
-      }
-      40% {
-        opacity: 1;
-      }
-    }
-
-    .progress-active {
-      border-color: #f97316 !important;
-      color: #0f172a !important;
-      font-weight: 700;
-    }
-
-    .progress-done {
-      border-color: #16a34a !important;
-      color: #166534 !important;
-      font-weight: 600;
-    }
-
-    textarea {
-      resize: vertical;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .hidden-step { display:none !important; }
+    .soft-in { animation: softIn .28s ease-out; }
+    @keyframes softIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .card-hover { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(15,23,42,.08); border-color:#fdba74; }
+    .category.selected { border-color:#f97316; background:#fff7ed; box-shadow:0 0 0 2px rgba(249,115,22,.08); }
+    .toast { animation: toastIn .22s ease-out; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .status-dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
+    .timeline-line { width:2px; background:#e2e8f0; position:absolute; left:15px; top:30px; bottom:-6px; }
+    .timeline:last-child .timeline-line { display:none; }
+    .chat-bubble { max-width:88%; padding:10px 12px; border-radius:14px; font-size:13px; line-height:1.5; }
+    .chat-user { background:#ea580c; color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+    .chat-ai { background:#f1f5f9; color:#334155; border-bottom-left-radius:4px; }
+    textarea { resize:vertical; }
   </style>
 </head>
-
 <body class="bg-slate-50 text-slate-800">
 
-  <!-- HEADER -->
-  <div class="gradient-border">
-    <header class="bg-slate-950 text-white">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-
-        <div class="flex items-center justify-between gap-4">
-
-          <button onclick="startNew()" class="text-left">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-xl">
-                📝
-              </div>
-
-              <div>
-                <div class="font-bold text-lg leading-tight">
-                  सरल शिकायत
-                </div>
-
-                <div class="text-xs text-slate-400">
-                  Saral Shikayat
-                </div>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onclick="showTracker()"
-            class="bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
-            📋 My Grievances
-          </button>
-
+  <header class="bg-slate-950 text-white sticky top-0 z-40 shadow-sm">
+    <div class="h-1 bg-gradient-to-r from-orange-500 via-white to-green-600"></div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <button onclick="startNew()" class="text-left">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-xl">📝</div>
+          <div>
+            <div class="font-extrabold tracking-tight">सरल शिकायत · Saral Shikayat</div>
+            <div class="text-xs text-slate-400">Explain → Find → Prepare → Track</div>
+          </div>
         </div>
+      </button>
+      <button onclick="showTracker()" class="bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold">
+        📋 My Grievances
+      </button>
+    </div>
+  </header>
 
-      </div>
-    </header>
-  </div>
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-
-  <!-- MAIN -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-
-
-    <!-- HERO -->
     <section id="hero" class="mb-8">
-
-      <div class="grid lg:grid-cols-5 gap-6 items-stretch">
-
-        <div class="lg:col-span-3 rounded-3xl bg-slate-950 text-white p-7 sm:p-9 shadow-xl">
-
-          <div class="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-3 py-1.5 text-xs text-slate-300 mb-5">
-            <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-            Citizen-first grievance assistant
+      <div class="grid lg:grid-cols-5 gap-6">
+        <div class="lg:col-span-3 rounded-3xl bg-slate-950 text-white p-7 sm:p-10 shadow-xl">
+          <div class="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-3 py-1.5 text-xs text-slate-300">
+            <span class="status-dot bg-emerald-400"></span>
+            Citizen-first prototype
           </div>
-
-          <h1 class="text-3xl sm:text-5xl font-bold leading-tight">
-            Don't know where to complain?
-          </h1>
-
-          <p class="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed">
-            Tell us your problem in simple words. Saral Shikayat helps you
-            identify the likely department, prepare your complaint and track
-            your follow-up.
+          <h1 class="text-4xl sm:text-6xl font-black leading-[1.02] mt-5 max-w-2xl">Don't know where to complain?</h1>
+          <p class="text-slate-300 text-base sm:text-lg mt-5 max-w-2xl leading-relaxed">
+            Describe your problem in simple words. Saral Shikayat helps you identify the likely department, understand what to prepare, create a complaint draft and keep a follow-up record.
           </p>
-
-          <div class="flex flex-wrap gap-3 mt-7 text-sm">
-
-            <div class="bg-white/10 rounded-xl px-3 py-2">
-              🔎 Find department
-            </div>
-
-            <div class="bg-white/10 rounded-xl px-3 py-2">
-              📝 Prepare complaint
-            </div>
-
-            <div class="bg-white/10 rounded-xl px-3 py-2">
-              📊 Track progress
-            </div>
-
+          <div class="flex flex-wrap gap-2 mt-7">
+            <span class="rounded-xl bg-white/10 px-3 py-2 text-sm">🎯 Department match</span>
+            <span class="rounded-xl bg-white/10 px-3 py-2 text-sm">📋 Checklist</span>
+            <span class="rounded-xl bg-white/10 px-3 py-2 text-sm">📝 Draft</span>
+            <span class="rounded-xl bg-white/10 px-3 py-2 text-sm">📊 Tracker</span>
           </div>
-
         </div>
 
-
-        <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-
-          <p class="text-xs font-bold uppercase tracking-wider text-orange-600">
-            How it works
-          </p>
-
-          <div class="mt-5 space-y-5">
-
+        <div class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-widest text-orange-600">Why this is useful</p>
+          <div class="mt-5 space-y-4">
             <div class="flex gap-3">
-              <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                1
-              </div>
-
-              <div>
-                <p class="font-semibold">Explain</p>
-                <p class="text-sm text-slate-500">
-                  Describe the issue naturally.
-                </p>
-              </div>
+              <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">1</div>
+              <div><div class="font-bold">No government jargon required</div><div class="text-sm text-slate-500">Citizens explain the problem naturally.</div></div>
             </div>
-
-
             <div class="flex gap-3">
-              <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                2
-              </div>
-
-              <div>
-                <p class="font-semibold">Find</p>
-                <p class="text-sm text-slate-500">
-                  Identify the likely responsible department.
-                </p>
-              </div>
+              <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">2</div>
+              <div><div class="font-bold">See why a department matched</div><div class="text-sm text-slate-500">The result is transparent instead of a black box.</div></div>
             </div>
-
-
             <div class="flex gap-3">
-              <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                3
-              </div>
-
-              <div>
-                <p class="font-semibold">Prepare</p>
-                <p class="text-sm text-slate-500">
-                  Get a structured grievance draft.
-                </p>
-              </div>
+              <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">3</div>
+              <div><div class="font-bold">Prepare before you submit</div><div class="text-sm text-slate-500">Documents, location and a formal draft are shown together.</div></div>
             </div>
-
-
             <div class="flex gap-3">
-              <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                4
-              </div>
-
-              <div>
-                <p class="font-semibold">Track</p>
-                <p class="text-sm text-slate-500">
-                  Save a reference ID for follow-up.
-                </p>
-              </div>
+              <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">4</div>
+              <div><div class="font-bold">Keep a clear follow-up record</div><div class="text-sm text-slate-500">Reference ID, status and timeline stay together.</div></div>
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </section>
 
-
-    <!-- PROGRESS -->
-    <div id="progress" class="mb-7 grid grid-cols-4 gap-1 sm:gap-3">
-
-      <div id="pstep-1"
-           class="border-b-4 border-orange-500 pb-2 text-center text-xs sm:text-sm progress-active">
-        1. Describe
-      </div>
-
-      <div id="pstep-2"
-           class="border-b-4 border-slate-200 pb-2 text-center text-xs sm:text-sm text-slate-400">
-        2. Department
-      </div>
-
-      <div id="pstep-3"
-           class="border-b-4 border-slate-200 pb-2 text-center text-xs sm:text-sm text-slate-400">
-        3. Draft
-      </div>
-
-      <div id="pstep-4"
-           class="border-b-4 border-slate-200 pb-2 text-center text-xs sm:text-sm text-slate-400">
-        4. Saved
-      </div>
-
+    <div id="progress" class="grid grid-cols-4 gap-1 sm:gap-3 mb-7">
+      <div id="p1" class="border-b-4 border-orange-500 py-2 text-center text-xs sm:text-sm font-bold">1. Describe</div>
+      <div id="p2" class="border-b-4 border-slate-200 py-2 text-center text-xs sm:text-sm text-slate-400">2. Department</div>
+      <div id="p3" class="border-b-4 border-slate-200 py-2 text-center text-xs sm:text-sm text-slate-400">3. Prepare</div>
+      <div id="p4" class="border-b-4 border-slate-200 py-2 text-center text-xs sm:text-sm text-slate-400">4. Saved</div>
     </div>
 
-
     <!-- STEP 1 -->
-    <section id="step-1" class="step active">
-
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-
+    <section id="step1" class="soft-in">
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div class="p-6 sm:p-8">
-
           <div class="flex items-start justify-between gap-4">
-
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-orange-600">
-                Step 1
-              </p>
-
-              <h2 class="text-2xl font-bold mt-1">
-                What problem are you facing?
-              </h2>
-
-              <p class="text-slate-500 mt-2 text-sm">
-                You don't need government terminology. Explain it just like
-                you would explain it to another person.
-              </p>
+              <div class="text-xs font-bold uppercase tracking-widest text-orange-600">Step 1</div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold mt-1">Tell us what happened</h2>
+              <p class="text-slate-500 mt-2 text-sm">Write it the way you would tell a person. You don't need official terms.</p>
             </div>
-
-            <div class="hidden sm:block text-4xl">
-              💬
-            </div>
-
+            <div class="hidden sm:block text-4xl">💬</div>
           </div>
 
-
-          <!-- QUICK CATEGORIES -->
           <div class="mt-7">
-
-            <p class="text-sm font-semibold mb-3">
-              Choose a common problem
-            </p>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-              <button onclick="useCategory(this, 'Garbage is not being collected from my area.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">🗑️</div>
-                <div class="text-sm font-semibold mt-1">Garbage</div>
-                <div class="text-xs text-slate-400">Sanitation</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'There is a problem with my electricity supply or electricity bill.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">💡</div>
-                <div class="text-sm font-semibold mt-1">Electricity</div>
-                <div class="text-xs text-slate-400">Power</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a problem with my railway ticket, train or refund.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">🚆</div>
-                <div class="text-sm font-semibold mt-1">Railway</div>
-                <div class="text-xs text-slate-400">Train / ticket</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a problem with my bank account or UPI transaction.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">🏦</div>
-                <div class="text-sm font-semibold mt-1">Banking</div>
-                <div class="text-xs text-slate-400">Bank / UPI</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a problem with my Aadhaar or UIDAI service.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">🪪</div>
-                <div class="text-sm font-semibold mt-1">Aadhaar</div>
-                <div class="text-xs text-slate-400">UIDAI</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a problem with my passport application or Passport Seva service.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">🛂</div>
-                <div class="text-sm font-semibold mt-1">Passport</div>
-                <div class="text-xs text-slate-400">Passport Seva</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a problem with my provident fund or PF withdrawal.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">💼</div>
-                <div class="text-sm font-semibold mt-1">PF</div>
-                <div class="text-xs text-slate-400">EPFO</div>
-              </button>
-
-
-              <button onclick="useCategory(this, 'I have a public grievance and I am not sure which department handles it.')"
-                      class="category-card border border-slate-200 rounded-2xl p-3 text-left">
-                <div class="text-2xl">❓</div>
-                <div class="text-sm font-semibold mt-1">Other</div>
-                <div class="text-xs text-slate-400">Not sure</div>
-              </button>
-
+            <div class="flex items-center justify-between mb-3">
+              <p class="font-bold text-sm">Try a common problem</p>
+              <span class="text-xs text-slate-400">Click to fill an example</span>
             </div>
-
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <button class="category card-hover border border-slate-200 rounded-2xl p-3 text-left" onclick="pickCategory(this, 'Garbage has not been collected from my street for the last 5 days and the waste is piling up.')"><div class="text-2xl">🗑️</div><div class="font-bold text-sm mt-1">Garbage</div><div class="text-xs text-slate-400">Sanitation</div></button>
+              <button class="category card-hover border border-slate-200 rounded-2xl p-3 text-left" onclick="pickCategory(this, 'There has been a power cut in my area and the electricity supply has not returned.')"><div class="text-2xl">⚡</div><div class="font-bold text-sm mt-1">Electricity</div><div class="text-xs text-slate-400">Power supply</div></button>
+              <button class="category card-hover border border-slate-200 rounded-2xl p-3 text-left" onclick="pickCategory(this, 'My railway ticket refund has not been received for my cancelled journey.')"><div class="text-2xl">🚆</div><div class="font-bold text-sm mt-1">Railway</div><div class="text-xs text-slate-400">Train / refund</div></button>
+              <button class="category card-hover border border-slate-200 rounded-2xl p-3 text-left" onclick="pickCategory(this, 'My UPI transaction failed but the amount was deducted from my bank account.')"><div class="text-2xl">🏦</div><div class="font-bold text-sm mt-1">Banking</div><div class="text-xs text-slate-400">UPI / transaction</div></button>
+              <button class="category card-hover border border-slate-200 rounded-2xl p-3 text-left" onclick="pickCategory(this, 'My Aadhaar update request has not been completed and I need help checking its status.')"><div class="text-2xl">🪪</div><div class="font-bold text-sm mt-1">Aadhaar</div><div class="text-xs text-slate-400">UIDAI</div></button>
+            </div>
           </div>
 
-
-          <!-- DESCRIPTION -->
           <div class="mt-7">
+            <label class="font-bold text-sm block mb-2">Your problem</label>
+            <textarea id="description" rows="6" maxlength="2000" class="w-full border border-slate-300 rounded-2xl px-4 py-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="Example: Garbage has not been collected from my street for the last 5 days..."></textarea>
+            <div class="flex justify-between text-xs text-slate-400 mt-1"><span>Best results: what + where + since when.</span><span id="counter">0/2000</span></div>
+          </div>
 
-            <label class="block text-sm font-semibold mb-2">
-              Describe your problem
-            </label>
-
-            <textarea
-              id="description"
-              rows="6"
-              maxlength="2000"
-              placeholder="Example: Garbage has not been collected from my street for the last 5 days. The waste is piling up and creating a bad smell."
-              class="w-full border border-slate-300 rounded-2xl p-4 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none transition text-sm leading-relaxed"
-              oninput="updateReadiness()"></textarea>
-
-            <div class="flex justify-between text-xs text-slate-400 mt-1">
-              <span>Tip: Mention what happened, where and since when.</span>
-              <span id="char-count">0 / 2000</span>
+          <div class="mt-5 grid sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+              <label class="font-bold text-sm block mb-2">Location</label>
+              <input id="location" type="text" class="w-full border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="City / district / area / ward">
             </div>
-
-          </div>
-
-
-          <!-- LOCATION -->
-          <div class="mt-5">
-
-            <label class="block text-sm font-semibold mb-2">
-              Where is the problem? <span class="text-slate-400 font-normal">(optional)</span>
-            </label>
-
-            <input
-              id="location"
-              type="text"
-              placeholder="City / district / area"
-              class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none transition text-sm"
-              oninput="updateReadiness()">
-
-            <p class="text-xs text-slate-400 mt-1">
-              Location helps citizens identify the relevant local authority.
-            </p>
-
-          </div>
-
-
-          <!-- USER DETAILS -->
-          <div class="grid sm:grid-cols-2 gap-4 mt-5">
-
             <div>
-              <label class="block text-sm font-semibold mb-2">
-                Your name
-              </label>
-
-              <input
-                id="name"
-                type="text"
-                placeholder="Full name"
-                class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none transition text-sm">
+              <label class="font-bold text-sm block mb-2">Name</label>
+              <input id="name" type="text" class="w-full border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="Your name">
             </div>
-
-
-            <div>
-              <label class="block text-sm font-semibold mb-2">
-                Phone or email
-              </label>
-
-              <input
-                id="contact"
-                type="text"
-                placeholder="For follow-up"
-                class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 focus:outline-none transition text-sm">
-            </div>
-
           </div>
 
-
-          <!-- READINESS -->
-          <div class="mt-6 bg-slate-50 rounded-2xl p-4 border border-slate-200">
-
-            <div class="flex justify-between items-center mb-2">
-
-              <div>
-                <p class="text-sm font-semibold">
-                  Complaint readiness
-                </p>
-
-                <p id="readiness-text" class="text-xs text-slate-500">
-                  Start by describing your problem.
-                </p>
-              </div>
-
-              <div id="readiness-score"
-                   class="text-sm font-bold text-slate-500">
-                0%
-              </div>
-
-            </div>
-
-            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div id="readiness-bar"
-                   class="h-full bg-orange-500 rounded-full transition-all"
-                   style="width:0%">
-              </div>
-            </div>
-
+          <div class="mt-4">
+            <label class="font-bold text-sm block mb-2">Phone or email <span class="font-normal text-slate-400">(optional for this demo)</span></label>
+            <input id="contact" type="text" class="w-full border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="demo@example.com or 9999999999">
           </div>
 
+          <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+            <div class="flex items-center justify-between"><div><div class="font-bold text-sm">Complaint readiness</div><div id="readinessText" class="text-xs text-slate-500 mt-1">Add a description to begin.</div></div><div id="readinessScore" class="font-black text-slate-500">0%</div></div>
+            <div class="h-2 bg-slate-200 rounded-full mt-3 overflow-hidden"><div id="readinessBar" class="h-full bg-orange-500 rounded-full transition-all" style="width:0%"></div></div>
+          </div>
 
-          <button
-            onclick="doClassify()"
-            id="classify-btn"
-            class="mt-6 w-full sm:w-auto bg-orange-600 hover:bg-orange-700 active:scale-[.99] text-white px-6 py-3.5 rounded-2xl font-bold transition shadow-lg shadow-orange-600/20">
-            Find the right department →
-          </button>
-
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <button id="classifyBtn" onclick="doClassify()" class="flex-1 sm:flex-none bg-orange-600 hover:bg-orange-700 text-white px-7 py-3.5 rounded-2xl font-extrabold shadow-lg shadow-orange-600/20">Find the right department →</button>
+            <button onclick="loadDemo()" class="border border-slate-200 hover:bg-slate-50 px-5 py-3.5 rounded-2xl font-semibold">Use demo complaint</button>
+          </div>
         </div>
-
-        <div class="bg-amber-50 border-t border-amber-100 px-6 py-3 text-xs text-amber-800">
-          <strong>Prototype:</strong> This is an independent demonstration.
-          It is not an official government service.
-        </div>
-
+        <div class="bg-amber-50 border-t border-amber-100 px-6 py-3 text-xs text-amber-800"><strong>Prototype:</strong> Independent demonstration. Not an official government service and not connected to live government case systems.</div>
       </div>
-
     </section>
 
-
     <!-- STEP 2 -->
-    <section id="step-2" class="step">
+    <section id="step2" class="hidden-step soft-in">
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 sm:p-8">
+        <div class="flex items-start justify-between gap-4"><div><div class="text-xs font-bold uppercase tracking-widest text-orange-600">Step 2</div><h2 class="text-2xl sm:text-3xl font-extrabold mt-1">We found a likely department</h2><p class="text-slate-500 mt-2 text-sm">Review the reasoning before you prepare the complaint.</p></div><div id="deptIcon" class="text-4xl">🎯</div></div>
 
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-
-        <div class="flex justify-between gap-4">
-
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-orange-600">
-              Step 2
-            </p>
-
-            <h2 class="text-2xl font-bold mt-1">
-              We found a likely department
-            </h2>
-
-            <p class="text-slate-500 mt-2 text-sm">
-              Review the recommendation before preparing your complaint.
-            </p>
+        <div class="mt-7 rounded-3xl bg-orange-50 border border-orange-200 p-5">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div><div class="text-xs font-bold uppercase tracking-widest text-orange-700">Recommended</div><div id="deptLabel" class="text-2xl font-black mt-1">—</div><div id="deptSummary" class="text-sm text-slate-600 mt-2 max-w-2xl">—</div></div>
+            <div class="bg-white border border-orange-200 rounded-2xl px-5 py-3 min-w-32 text-center"><div class="text-xs text-slate-500">Match strength</div><div id="confidence" class="text-lg font-black text-green-700">—</div></div>
           </div>
-
-          <div class="text-4xl">
-            🎯
-          </div>
-
         </div>
 
+        <div class="mt-5"><label class="font-bold text-sm block mb-2">Does this look right?</label><select id="deptSelect" class="w-full border border-slate-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"></select><div class="text-xs text-slate-400 mt-2">You can manually correct the recommendation for the demo.</div></div>
 
-        <!-- DEPARTMENT RESULT -->
-        <div class="mt-7 rounded-3xl border border-orange-200 bg-orange-50 p-5">
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-
-            <div>
-
-              <p class="text-xs uppercase tracking-wider font-bold text-orange-700">
-                Recommended department
-              </p>
-
-              <h3 id="department-label"
-                  class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-                —
-              </h3>
-
-              <p id="department-reason"
-                 class="text-sm text-slate-600 mt-2">
-                Based on the problem you described.
-              </p>
-
-            </div>
-
-
-            <div class="bg-white rounded-2xl px-4 py-3 border border-orange-200 text-center">
-
-              <div class="text-xs text-slate-500">
-                Match
-              </div>
-
-              <div id="confidence"
-                   class="font-bold text-green-700">
-                Likely
-              </div>
-
-            </div>
-
-          </div>
-
+        <div class="grid md:grid-cols-3 gap-4 mt-6">
+          <div class="border border-slate-200 rounded-2xl p-5"><div class="font-bold">💡 Why this matched</div><div id="whyBox" class="mt-3 text-sm text-slate-600 space-y-2"></div></div>
+          <div class="border border-slate-200 rounded-2xl p-5"><div class="font-bold">📋 Get these ready</div><div id="docsBox" class="mt-3 text-sm text-slate-600 space-y-2"></div></div>
+          <div class="border border-slate-200 rounded-2xl p-5"><div class="font-bold">🧭 What to do next</div><div id="nextBox" class="mt-3 text-sm text-slate-600 space-y-2"></div></div>
         </div>
 
+        <div class="mt-6 border border-slate-200 rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="font-bold">⏱️ Indicative timeline</div><div class="text-xs text-slate-400 mt-1">Not a guaranteed SLA. The prototype uses example milestones for demonstration.</div></div><div class="text-xs bg-slate-100 rounded-full px-3 py-1">Prototype</div></div><div id="slaBox" class="mt-5"></div></div>
 
-        <!-- DEPARTMENT SELECT -->
-        <div class="mt-5">
+        <div class="mt-7 flex flex-col sm:flex-row gap-3"><button onclick="goStep(1)" class="border border-slate-200 px-5 py-3 rounded-2xl font-semibold">← Back</button><button id="draftBtn" onclick="doDraft()" class="bg-orange-600 hover:bg-orange-700 text-white px-7 py-3 rounded-2xl font-extrabold">Prepare my complaint →</button></div>
+      </div>
+    </section>
 
-          <label class="block text-sm font-semibold mb-2">
-            Is this the right department?
-          </label>
+    <!-- STEP 3 -->
+    <section id="step3" class="hidden-step soft-in">
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 sm:p-8">
+        <div class="text-xs font-bold uppercase tracking-widest text-orange-600">Step 3</div><h2 class="text-2xl sm:text-3xl font-extrabold mt-1">Prepare and review</h2><p class="text-slate-500 mt-2 text-sm">Edit the draft, then save a reference number for your own follow-up record.</p>
+        <div id="draftSource" class="inline-flex mt-4 bg-slate-100 rounded-full px-3 py-1 text-xs text-slate-500"></div>
+        <textarea id="draftText" rows="18" class="mt-5 w-full border border-slate-300 rounded-2xl px-4 py-3 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-300"></textarea>
+        <div class="mt-4 grid sm:grid-cols-2 gap-4"><div class="rounded-2xl bg-green-50 border border-green-100 p-4"><div class="font-bold text-sm">✅ Ready to copy</div><div class="text-xs text-slate-600 mt-1">Use the copied text in the appropriate official grievance channel.</div></div><div class="rounded-2xl bg-blue-50 border border-blue-100 p-4"><div class="font-bold text-sm">🔗 Important</div><div class="text-xs text-slate-600 mt-1">Verify the actual portal/helpline with the responsible authority before submitting.</div></div></div>
+        <div class="mt-6 flex flex-wrap gap-3"><button onclick="goStep(2)" class="border border-slate-200 px-5 py-3 rounded-2xl font-semibold">← Back</button><button onclick="copyDraft()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold">📋 Copy complaint</button><button id="saveBtn" onclick="saveGrievance()" class="bg-green-600 hover:bg-green-700 text-white px-7 py-3 rounded-2xl font-extrabold">Save & track →</button></div>
+      </div>
+    </section>
 
-          <select
-            id="dept-select"
-            class="w-full border border-slate-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-400 focus:outline-none">
-          </select>
+    <!-- STEP 4 -->
+    <section id="step4" class="hidden-step soft-in">
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-sm p-7 sm:p-10 text-center"><div class="w-20 h-20 mx-auto rounded-full bg-green-100 text-green-700 flex items-center justify-center text-4xl">✓</div><div class="text-xs font-bold uppercase tracking-widest text-green-700 mt-6">Saved</div><h2 class="text-3xl font-black mt-1">Your reference ID</h2><div id="refDisplay" class="text-4xl font-black text-orange-600 mt-3">#—</div><p class="max-w-2xl mx-auto text-sm text-slate-500 mt-4">This reference belongs to the Saral Shikayat prototype record. It does not confirm that a complaint has been submitted to a government department.</p><div class="grid sm:grid-cols-3 gap-3 max-w-3xl mx-auto mt-7 text-left"><div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xl">🎯</div><div class="font-bold text-sm mt-2">Department</div><div id="savedDept" class="text-xs text-slate-500 mt-1">—</div></div><div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xl">📊</div><div class="font-bold text-sm mt-2">Status</div><div class="text-xs text-slate-500 mt-1">Submitted in prototype</div></div><div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xl">🧭</div><div class="font-bold text-sm mt-2">Next step</div><div class="text-xs text-slate-500 mt-1">Verify and submit through the appropriate official channel</div></div></div><div class="mt-8 flex flex-col sm:flex-row justify-center gap-3"><button onclick="showTracker()" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-extrabold">📋 View My Grievances</button><button onclick="startNew()" class="border border-slate-200 px-6 py-3 rounded-2xl font-semibold">+ New complaint</button></div></div>
+    </section>
 
-          <p class="text-xs text-slate-400 mt-2">
-            If the recommendation is incorrect, choose the department that
-            seems most appropriate.
-          </p>
+    <!-- TRACKER -->
+    <section id="tracker" class="hidden-step soft-in">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5"><div><div class="text-xs font-bold uppercase tracking-widest text-orange-600">Citizen dashboard</div><h2 class="text-3xl font-black mt-1">My Grievances</h2><p class="text-sm text-slate-500 mt-1">Saved prototype records, statuses and follow-up milestones.</p></div><button onclick="startNew()" class="text-orange-600 font-bold text-sm">+ New grievance</button></div>
+      <div class="rounded-2xl bg-amber-50 border border-amber-100 p-4 text-xs text-amber-800 mb-5"><strong>Prototype status simulation:</strong> You can advance a saved record to demonstrate the workflow. These status changes are not sent to a government system.</div>
+      <div id="trackerList" class="space-y-5"></div>
+    </section>
+  </main>
 
-        </div>
+  <footer class="border-t border-slate-200 bg-white mt-12"><div class="max-w-6xl mx-auto px-4 sm:px-6 py-7 flex flex-col sm:flex-row justify-between gap-3 text-xs text-slate-400"><div><span class="font-bold text-slate-600">Saral Shikayat</span> · Independent prototype</div><div>Not an official government service · Demo data only</div></div></footer>
+  <div id="toastWrap" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[min(92%,420px)]"></div>
 
+<script>
+const DEPT_OPTIONS = {
+  epfo: 'EPFO (Provident Fund)',
+  income_tax: 'Income Tax Department',
+  railways: 'Railways / IRCTC',
+  passport: 'Passport Seva',
+  aadhaar: 'UIDAI (Aadhaar)',
+  pension: 'Pension / Pension Directorate',
+  municipal: 'Municipal / Local Body',
+  electricity: 'Electricity / Power Utility',
+  banking: 'Banking / Financial Grievance',
+  police: 'Police / Law & Order',
+  other: 'General Public Grievance'
+};
 
-        <!-- WHY -->
-        <div class="mt-6 grid md:grid-cols-2 gap-4">
+const DEPT_DETAILS = {
+  epfo: { docs:['UAN / PF member ID','Claim or transaction reference, if available','Bank details used for the PF claim'], next:['Check your UAN/claim details','Prepare the relevant reference number','Use the official EPFO grievance channel'] },
+  income_tax: { docs:['PAN number','Assessment year','ITR acknowledgement / transaction reference'], next:['Collect PAN and assessment-year details','Keep the ITR / refund reference ready','Verify the official Income Tax grievance route'] },
+  railways: { docs:['PNR number','Ticket / transaction reference','Journey date'], next:['Keep the PNR or booking reference ready','Describe the issue and journey date','Use the official railway grievance channel'] },
+  passport: { docs:['Application / file / ARN number','Appointment details, if applicable','Relevant police-verification details, if applicable'], next:['Find your application/file reference','Check appointment or verification status','Use the official Passport Seva grievance route'] },
+  aadhaar: { docs:['Aadhaar number / Enrolment ID','Update Request Number, if available','Relevant proof used for the request'], next:['Keep your Aadhaar/EID reference ready','Note the date of the update request','Use the official UIDAI grievance channel'] },
+  pension: { docs:['PPO number','Relevant bank/payment details','Previous pension correspondence, if any'], next:['Keep PPO and payment records ready','Describe the missing or incorrect payment','Use the relevant official pension grievance channel'] },
+  municipal: { docs:['Area / ward / locality details','Photo of the issue, if useful','Previous complaint number, if any'], next:['Add the exact area or locality','Attach a photo where useful','Use the relevant local body grievance channel'] },
+  electricity: { docs:['Consumer account / connection number','Meter number','Latest electricity bill, if available'], next:['Keep your consumer number ready','Mention outage/billing dates and location','Use the relevant electricity utility grievance channel'] },
+  banking: { docs:['Transaction/reference number','Relevant account/card details','Bank complaint reference, if already raised'], next:['Collect the transaction reference','Check whether the bank complaint was already registered','Use the appropriate official banking grievance route'] },
+  police: { docs:['Incident date and location','Police station details, if known','FIR / complaint number, if already filed'], next:['Record the date, time and location','Keep any existing complaint/FIR reference','Use the appropriate police/emergency channel based on the situation'] },
+  other: { docs:['Relevant application/reference number','Important dates','Previous correspondence, if any'], next:['Choose the closest department from the list','Keep any application/reference number ready','Verify the correct official grievance channel before filing'] }
+};
 
-          <div class="border border-slate-200 rounded-2xl p-5">
+let state = {
+  description:'', location:'', name:'', contact:'', departmentKey:'other', departmentLabel:'',
+  draft:'', draftSource:'template', classification:null
+};
 
-            <h3 class="font-bold">
-              💡 Why this department?
-            </h3>
+function $(id) { return document.getElementById(id); }
 
-            <div id="why-list" class="mt-3 space-y-2 text-sm text-slate-600">
-            </div>
+function toast(message) {
+  const wrap = $('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast bg-slate-900 text-white rounded-xl px-4 py-3 text-sm shadow-xl mb-2';
+  el.textContent = message;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 220); }, 2600);
+}
 
-          </div>
+function setLoading(id, loading, label) {
+  const btn = $(id);
+  if (!btn) return;
+  if (!btn.dataset.normal) btn.dataset.normal = btn.textContent;
+  btn.disabled = loading;
+  btn.textContent = loading ? label : btn.dataset.normal;
+  btn.classList.toggle('opacity-60', loading);
+  btn.classList.toggle('cursor-not-allowed', loading);
+}
 
+function setVisible(id, visible) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle('hidden-step', !visible);
+}
 
-          <div class="border border-slate-200 rounded-2xl p-5">
+function goStep(n) {
+  ['step1','step2','step3','step4','tracker'].forEach(id => setVisible(id, false));
+  const target = n === 'tracker' ? 'tracker' : 'step' + n;
+  setVisible(target, true);
+  if (n !== 'tracker') setProgress(n);
+  else setProgress(0);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
 
-            <h3 class="font-bold">
-              📋 Get these ready
-            </h3>
+function setProgress(current) {
+  for (let i=1;i<=4;i++) {
+    const el = $('p'+i);
+    el.classList.remove('border-orange-500','font-bold','border-green-500','text-green-700','text-slate-400');
+    if (current && i < current) {
+      el.classList.add('border-green-500','font-bold','text-green-700');
+    } else if (current === i) {
+      el.classList.add('border-orange-500','font-bold');
+    } else {
+      el.classList.add('border-slate-200','text-slate-400');
+    }
+  }
+}
 
-            <ul id="doc-checklist"
-                class="mt-3 space-y-2 text-sm text-slate-600">
-            </ul>
+function startNew() {
+  $('hero').style.display = '';
+  goStep(1);
+}
 
-          </div>
+function pickCategory(button, text) {
+  document.querySelectorAll('.category').forEach(b => b.classList.remove('selected'));
+  button.classList.add('selected');
+  $('description').value = text;
+  updateReadiness();
+  $('description').focus();
+}
 
-        </div>
+function loadDemo() {
+  document.querySelectorAll('.category').forEach(b => b.classList.remove('selected'));
+  $('description').value = 'Garbage has not been collected from my street for the last 5 days. The waste is piling up and creating a bad smell.';
+  $('location').value = 'Demo Nagar, Ward 12';
+  $('name').value = 'Rahul Kumar';
+  $('contact').value = '9999999999';
+  updateReadiness();
+  toast('Demo complaint filled. Click Find the right department.');
+}
 
+function updateReadiness() {
+  const text = $('description').value.trim();
+  const location = $('location').value.trim();
+  $('counter').textContent = `${text.length}/2000`;
+  let score = 0;
+  if (text.length >= 20) score += 45; else if (text.length >= 5) score += 20;
+  if (location.length >= 2) score += 25;
+  const lower = text.toLowerCase();
+  if (/(day|days|since|yesterday|month|months|week|weeks|hour|hours)/.test(lower)) score += 15;
+  if (/(street|road|area|ward|village|city|district|locality|near)/.test(lower)) score += 15;
+  score = Math.min(score, 100);
+  $('readinessScore').textContent = score + '%';
+  $('readinessBar').style.width = score + '%';
+  $('readinessText').textContent = score === 0 ? 'Add a description to begin.' : score < 50 ? 'Add location or timing for a clearer complaint.' : score < 80 ? 'Good start. A little more context will help.' : 'Good — this has useful context for routing.';
+}
 
-        <!-- NEXT PROCESS -->
-        <div class="mt-5 border border-slate-200 rounded-2xl p-5">
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
 
-          <h3 class="font-bold">
-            ⏭️ Next steps
-          </h3>
+function renderList(container, items, bullet='✓') {
+  container.innerHTML = (items || []).map(item => `<div class="flex gap-2"><span class="text-green-600 font-bold">${bullet}</span><span>${escapeHtml(item)}</span></div>`).join('');
+}
 
-          <div id="next-steps" class="mt-3 space-y-2 text-sm text-slate-600">
-          </div>
+function populateDepartments(selected) {
+  $('deptSelect').innerHTML = Object.entries(DEPT_OPTIONS).map(([key,label]) => `<option value="${key}" ${key === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('');
+}
+
+function renderDepartmentData(data) {
+  state.departmentKey = data.department_key;
+  state.departmentLabel = data.department_label;
+  state.classification = data;
+  $('deptIcon').textContent = data.icon || '🎯';
+  $('deptLabel').textContent = data.department_label;
+  $('deptSummary').textContent = data.confidence > 0 ? `The system found a ${data.confidence_label.toLowerCase()} based on the words used in your description.` : 'No strong match was found, so review the department manually.';
+  $('confidence').textContent = data.confidence + '% · ' + data.confidence_label;
+  populateDepartments(data.department_key);
+  $('whyBox').innerHTML = (data.why || []).map(x => `<div class="flex gap-2"><span class="text-orange-600">•</span><span>${escapeHtml(x)}</span></div>`).join('');
+  renderList($('docsBox'), data.documents || []);
+  renderList($('nextBox'), data.next_steps || [], '→');
+  $('slaBox').innerHTML = (data.sla || []).map((s, i) => `<div class="relative flex gap-4 pb-4 timeline"><div class="timeline-line"></div><div class="relative z-10 w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black">${i+1}</div><div class="pt-1"><div class="font-semibold text-sm">${escapeHtml(s.label)}</div><div class="text-xs text-slate-500 mt-1">Indicative date: <strong>${escapeHtml(s.date)}</strong></div></div></div>`).join('');
+}
+
+$('deptSelect').addEventListener('change', () => {
+  const key = $('deptSelect').value;
+  state.departmentKey = key;
+  state.departmentLabel = DEPT_OPTIONS[key];
+  const details = DEPT_DETAILS[key] || DEPT_DETAILS.other;
+  renderList($('docsBox'), details.docs);
+  renderList($('nextBox'), details.next, '→');
+  $('deptLabel').textContent = DEPT_OPTIONS[key];
+});
+
+async function doClassify() {
+  state.description = $('description').value.trim();
+  state.location = $('location').value.trim();
+  state.name = $('name').value.trim();
+  state.contact = $('contact').value.trim();
+  if (state.description.length < 3) {
+    toast('Please describe the problem first.');
+    $('description').focus();
+    return;
+  }
+  setLoading('classifyBtn', true, 'Finding department…');
+  try {
+    const res = await fetch('/api/classify', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({description:state.description})
+    });
+    const raw = await res.text();
+    let data = {};
+    try { data = JSON.parse(raw); } catch (_) { throw new Error('Server returned an invalid response.'); }
+    if (!res.ok) throw new Error(data.error || `Classification failed (${res.status}).`);
+    renderDepartmentData(data);
+    goStep(2);
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Could not connect to the server.');
+  } finally {
+    setLoading('classifyBtn', false);
+  }
+}
+
+async function doDraft() {
+  state.departmentKey = $('deptSelect').value;
+  state.departmentLabel = DEPT_OPTIONS[state.departmentKey];
+  setLoading('draftBtn', true, 'Preparing complaint…');
+  try {
+    const res = await fetch('/api/draft', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:state.name,
+        contact:state.contact,
+        location:state.location,
+        department_key:state.departmentKey,
+        description:state.description
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Draft generation failed.');
+    state.draft = data.draft;
+    state.draftSource = data.source;
+    $('draftText').value = data.draft;
+    $('draftSource').textContent = data.source === 'llm' ? '✨ AI-assisted draft' : '📝 Reliable template draft';
+    goStep(3);
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Could not create the draft.');
+  } finally {
+    setLoading('draftBtn', false);
+  }
+}
+
+async function copyDraft() {
+  try {
+    await navigator.clipboard.writeText($('draftText').value);
+    toast('Complaint copied to clipboard.');
+  } catch (_) {
+    $('draftText').select();
+    document.execCommand('copy');
+    toast('Complaint copied.');
+  }
+}
+
+async function saveGrievance() {
+  state.departmentKey = $('deptSelect').value;
+  state.departmentLabel = DEPT_OPTIONS[state.departmentKey];
+  state.draft = $('draftText').value;
+  setLoading('saveBtn', true, 'Saving…');
+  try {
+    const res = await fetch('/api/grievances', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:state.name,
+        contact:state.contact,
+        location:state.location,
+        department_key:state.departmentKey,
+        department_label:state.departmentLabel,
+        description:state.description,
+        draft_text:state.draft,
+        drafted_by:state.draftSource
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not save the grievance.');
+    $('refDisplay').textContent = '#' + data.ref_id;
+    $('savedDept').textContent = state.departmentLabel;
+    goStep(4);
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Could not save the grievance.');
+  } finally {
+    setLoading('saveBtn', false);
+  }
+}
+
+function statusColor(status) {
+  return {
+    submitted:'bg-orange-100 text-orange-700',
+    under_review:'bg-blue-100 text-blue-700',
+    in_progress:'bg-purple-100 text-purple-700',
+    resolved:'bg-green-100 text-green-700'
+  }[status] || 'bg-slate-100 text-slate-700';
+}
+
+function renderTracker(items) {
+  if (!items.length) {
+    $('trackerList').innerHTML = `<div class="bg-white border border-slate-200 rounded-3xl p-10 text-center"><div class="text-5xl">📭</div><div class="text-xl font-black mt-4">No saved grievances</div><div class="text-sm text-slate-500 mt-2">Create a complaint to see it here.</div><button onclick="startNew()" class="mt-5 bg-orange-600 text-white px-5 py-3 rounded-2xl font-bold">Start a complaint</button></div>`;
+    return;
+  }
+
+  $('trackerList').innerHTML = items.map(item => {
+    const statusSteps = [
+      ['submitted','Submitted'],['under_review','Under review'],['in_progress','In progress'],['resolved','Resolved']
+    ];
+    const currentIndex = statusSteps.findIndex(x => x[0] === item.status);
+    const steps = statusSteps.map((step, idx) => `<div class="flex-1"><div class="h-2 rounded-full ${idx <= currentIndex ? 'bg-orange-500' : 'bg-slate-200'}"></div><div class="text-[11px] mt-1 ${idx <= currentIndex ? 'text-slate-700 font-bold' : 'text-slate-400'}">${step[1]}</div></div>`).join('');
+    const sla = (item.sla || []).map((s,i) => `<div class="relative flex gap-3 pb-4 timeline"><div class="timeline-line"></div><div class="relative z-10 w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold">${i+1}</div><div><div class="font-semibold text-sm">${escapeHtml(s.label)}</div><div class="text-xs text-slate-400">Indicative date: ${escapeHtml(s.date)}</div></div></div>`).join('');
+    return `<article class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden"><div class="p-5 sm:p-6"><div class="flex flex-col sm:flex-row justify-between gap-4"><div><div class="flex flex-wrap items-center gap-2"><span class="font-black">#${escapeHtml(item.ref_id)}</span><span class="px-2.5 py-1 rounded-full text-xs font-bold ${statusColor(item.status)}">${escapeHtml(item.status_label)}</span></div><div class="text-lg font-black mt-2">${escapeHtml(item.icon)} ${escapeHtml(item.department_label)}</div><div class="text-sm text-slate-500 mt-2">${escapeHtml(item.description.length > 180 ? item.description.slice(0,180) + '…' : item.description)}</div><div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-400"><span>Saved ${escapeHtml(item.created_at)}</span>${item.location ? `<span>• ${escapeHtml(item.location)}</span>` : ''}</div></div><div class="flex gap-2"><button onclick="advanceStatus('${escapeHtml(item.ref_id)}')" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold">Advance demo status</button><button onclick="toggleChat('${escapeHtml(item.ref_id)}')" class="bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-xl text-xs font-bold">💬 Ask</button></div></div><div class="grid grid-cols-4 gap-2 mt-6">${steps}</div><div class="mt-6 grid lg:grid-cols-2 gap-5"><div class="border border-slate-200 rounded-2xl p-5"><div class="font-bold text-sm">📊 Status timeline</div><div class="mt-4">${sla}</div>${item.status_note ? `<div class="mt-2 text-xs bg-slate-50 rounded-xl p-3 text-slate-500">${escapeHtml(item.status_note)}</div>` : ''}</div><div class="border border-slate-200 rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div class="font-bold text-sm">💬 Grievance assistant</div><div class="text-xs text-slate-400">Rules-based</div></div><div id="chat-${escapeHtml(item.ref_id)}" class="hidden mt-4"><div id="chatlog-${escapeHtml(item.ref_id)}" class="space-y-2 max-h-52 overflow-y-auto mb-3"></div><div class="flex flex-wrap gap-2 mb-3"><button class="text-xs border border-slate-200 rounded-xl px-3 py-2" onclick="quickChat('${escapeHtml(item.ref_id)}','What documents do I need?')">📄 Documents</button><button class="text-xs border border-slate-200 rounded-xl px-3 py-2" onclick="quickChat('${escapeHtml(item.ref_id)}','When should I expect a response?')">🕐 Timeline</button><button class="text-xs border border-slate-200 rounded-xl px-3 py-2" onclick="quickChat('${escapeHtml(item.ref_id)}','What if there is no response?')">⚠️ No response</button></div><form onsubmit="sendChat(event,'${escapeHtml(item.ref_id)}')" class="flex gap-2"><input id="chatinput-${escapeHtml(item.ref_id)}" class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm" placeholder="Ask a question"><button class="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Send</button></form></div><div class="mt-4 text-xs text-slate-500">Ask about documents, timeline, escalation or the mapped department.</div></div></div></div></article>`;
+  }).join('');
+}
+
+async function showTracker() {
+  $('hero').style.display = 'none';
+  goStep('tracker');
+  $('trackerList').innerHTML = `<div class="bg-white border border-slate-200 rounded-3xl p-8 text-center text-slate-400">Loading grievances…</div>`;
+  try {
+    const res = await fetch('/api/grievances');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not load grievances.');
+    renderTracker(data);
+  } catch (err) {
+    console.error(err);
+    $('trackerList').innerHTML = `<div class="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-5">${escapeHtml(err.message || 'Could not load grievances.')}</div>`;
+  }
+}
+
+function toggleChat(refId) {
+  const box = $('chat-' + refId);
+  if (!box) return;
+  box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden') && !$('chatlog-' + refId).dataset.started) {
+    $('chatlog-' + refId).dataset.started = '1';
+    appendChat(refId, 'assistant', 'Hi! Ask about documents, timeline, escalation or the department.');
+  }
+}
+
+function quickChat(refId, message) {
+  const input = $('chatinput-' + refId);
+  if (input) input.value = message;
+  const box = $('chat-' + refId);
+  if (box && box.classList.contains('hidden')) toggleChat(refId);
+}
+
+function appendChat(refId, role, text) {
+  const log = $('chatlog-' + refId);
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'chat-bubble ' + (role === 'user' ? 'chat-user' : 'chat-ai');
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChat(event, refId) {
+  event.preventDefault();
+  const input = $('chatinput-' + refId);
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+  appendChat(refId, 'user', message);
+  try {
+    const res = await fetch('/api/grievances/' + encodeURIComponent(refId) + '/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Assistant error.');
+    appendChat(refId, 'assistant', data.reply);
+  } catch (err) {
+    appendChat(refId, 'assistant', err.message || 'Assistant unavailable.');
+  }
+}
+
+async function advanceStatus(refId) {
+  try {
+    const res = await fetch('/api/grievances/' + encodeURIComponent(refId) + '/advance', {method:'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not update status.');
+    toast(data.message || 'Demo status updated.');
+    await showTracker();
+  } catch (err) {
+    toast(err.message || 'Could not update status.');
+  }
+}
+
+$('description').addEventListener('input', updateReadiness);
+$('location').addEventListener('input', updateReadiness);
+updateReadiness();
+setProgress(1);
+</script>
+</body>
+</html>
