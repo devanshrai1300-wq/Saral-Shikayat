@@ -6,12 +6,11 @@ from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify, render_template, g
 
-# Optional: only used if OPENAI_API_KEY is set. App works fully without it
-# via the rule-based template drafter below.
 try:
-    from openai import OpenAI  # type: ignore[import-not-found]
+    from openai import OpenAI  # pyright: ignore[reportMissingImports]
     _openai_available = True
-except ImportError:
+except ImportError:  # pragma: no cover - package may not be installed locally
+    OpenAI = None
     _openai_available = False
 
 app = Flask(__name__)
@@ -466,7 +465,6 @@ def get_grievance(ref_id):
         "sla": build_sla_dates(r["department_key"], created),
     })
 
-
+init_db()
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True, port=5000)
+     app.run(debug=False, port=5000)
